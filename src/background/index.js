@@ -4,12 +4,19 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  */
 
+import { createAppStore } from "../store";
 import updateBrowserAction from "./browser-action";
 import initializeMessagePorts from "./message-ports";
 import { initializeTelemetry } from "./telemetry";
+import { initializeLogins } from "./logins";
 
-Promise.resolve().then(async () => {
-  initializeTelemetry();
-  initializeMessagePorts();
+async function init() {
+  const store = createAppStore();
+
+  initializeTelemetry(store);
+  await initializeLogins(store);
+  initializeMessagePorts(store);
   await updateBrowserAction();
-});
+}
+
+init();

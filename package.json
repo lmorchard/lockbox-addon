@@ -6,7 +6,7 @@
   "description": "Take your passwords everywhere.",
   "engines": {
     "firefox": ">= 63",
-    "node" : ">=10.15.0"
+    "node": ">=10.15.0"
   },
   "scripts": {
     "autolint": "npm run :autolint:js && npm run :autolint:css",
@@ -113,8 +113,11 @@
     "react-modal": "^3.6.1",
     "react-redux": "^5.1.0",
     "redux": "^4.0.1",
+    "redux-actions": "^2.6.4",
+    "redux-promise-middleware": "^5.1.1",
     "redux-thunk": "^2.3.0",
     "style-loader": "^0.23.1",
+    "type-to-reducer": "^1.1.0",
     "uuid": "^3.3.2"
   }
 }

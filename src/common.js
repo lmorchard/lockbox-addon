@@ -14,3 +14,11 @@ export function makeItemSummary(item) {
 export function classNames(classNames) {
   return classNames.filter((i) => i).join(" ");
 }
+
+export const indexBy = (list, keyFn) => {
+  const out = {};
+  for (let item of list) {
+    out[keyFn(item)] = item;
+  }
+  return out;
+};
