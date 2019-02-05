@@ -40,7 +40,8 @@ export default class EditItemDetails extends React.Component {
 
   constructor(props) {
     super(props);
-    this.state = {};
+    this.state = {
+    };
   }
 
   static getDerivedStateFromProps(nextProps, prevState) {

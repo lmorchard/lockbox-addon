@@ -28,9 +28,25 @@
   box-shadow: 0 5px 12px 0 rgba(0, 0, 0, 0.2);
   background-color: #fdfdfd;
 }
+.error-tip {
+  position: absolute;
+  box-sizing: border-box;
+  margin-left: -3px;
+  margin-top: 4px;
+  border-radius: 4px;
+  padding: 4px 8px;
+  color: #fff;
+  font-size: 12px;
+  background-color: #d70022;
+}
 
 .input {
   max-width: 242px;
+}
+
+.input-error {
+  border-color: var(--red-60) !important;
+  box-shadow: 0 0 0 1px #d70022, 0 0 0 4px rgba(251, 0, 34, .3) !important;
 }
 
 .password {

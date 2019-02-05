@@ -6,6 +6,7 @@ import { Localized } from "fluent-react";
 import PropTypes from "prop-types";
 import React from "react";
 
+import { classNames } from "../../common";
 import CopyToClipboardButton from "../../widgets/copy-to-clipboard-button";
 import FieldText from "../../widgets/field-text";
 import Input from "../../widgets/input";
@@ -103,11 +104,39 @@ export class EditItemFields extends React.Component {
   render() {
     const {fields, onChange} = this.props;
     const {focusedField} = this.state;
-    const controlledProps = (name, maxLength = 500) => {
-      return {name, value: fields[name],
-              onFocus: () => this.focusField(name),
-              onChange: (e) => onChange(e),
-              maxLength: maxLength.toString()};
+
+    const validators = {
+      origin: value =>
+        value.startsWith("http://")
+        || value.startsWith("https://"),
+    };
+
+    const isValid = {};
+    for (let [name, value] of Object.entries(fields)) {
+      const validator = validators[name];
+      isValid[name] = validator ? validator(value) : true;
+    }
+
+    const controlledProps = ({
+      name,
+      className = styles.input,
+      errorClassName = styles.inputError,
+      maxLength = 500,
+      ...props
+    }) => {
+      const value = fields[name];
+      return {
+        ...props,
+        name,
+        value,
+        className: classNames([
+          className,
+          (!isValid[name]) && errorClassName,
+        ]),
+        onFocus: () => this.focusField(name),
+        onChange: (e) => onChange(e),
+        maxLength: maxLength.toString(),
+      };
     };
 
     return (
@@ -124,18 +153,24 @@ export class EditItemFields extends React.Component {
           </Localized>
           <div className={styles.fieldAndTip}>
             <Localized id="item-fields-origin-input" attrs={{placeholder: true}}>
-              <Input className={styles.input} type="text"
+              <Input type="text"
                      placeholder="wWw.eXAMPLe.cOm"
-                     {...controlledProps("origin")}
-                     ref={(element) => this._firstField = element} />
+                     ref={(element) => this._firstField = element}
+                     {...controlledProps({ name: "origin" })}
+                     />
             </Localized>
             {focusedField === "origin" &&
               <Localized id="item-fields-origin-tip">
                 <div className={styles.tip}>
                   mAKe sURe tHIs mATCHEs
                 </div>
-              </Localized>
-            }
+              </Localized>}
+            {!isValid.origin &&
+              <Localized id="item-fields-origin-error-tip">
+                <div className={styles.errorTip}>
+                  tHIs iS iNVALId
+                </div>
+              </Localized>}
           </div>
         </label>
         <label>
@@ -144,17 +179,22 @@ export class EditItemFields extends React.Component {
           </Localized>
           <Localized id="item-fields-username-input"
                      attrs={{placeholder: true}}>
-            <Input className={styles.input} type="text"
+            <Input type="text"
                    placeholder="nAMe@eXAMPLe.cOm"
-                   {...controlledProps("username")}/>
+                   {...controlledProps({ name: "username" })}
+                   />
           </Localized>
         </label>
         <label>
           <Localized id="item-fields-password">
             <LabelText>pASSWORd</LabelText>
           </Localized>
-          <PasswordInput className={styles.password}
-                         {...controlledProps("password")}/>
+          <PasswordInput {...controlledProps({
+                           name: "password",
+                           className: styles.password,
+                           errorClassName: styles.errorPassword,
+                         })}
+                         />
         </label>
       </div>
     );
