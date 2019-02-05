@@ -18,6 +18,9 @@ item-fields-title-input =
 item-fields-origin = Website Address
 item-fields-origin-input =
   .placeholder = www.example.com
+item-fields-origin-tip =
+  Make sure this matches the exact domain for the website you are referencing
+  ("https" and "www" included).
 item-fields-username = Username
 item-fields-username-input =
   .placeholder = name@example.com

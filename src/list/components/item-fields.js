@@ -85,14 +85,27 @@ export class EditItemFields extends React.Component {
     };
   }
 
+  constructor(props) {
+    super(props);
+    this.state = {
+      focusedField: null,
+    };
+  }
+
+  focusField(name) {
+    return this.setState({ focusedField: name });
+  }
+
   componentDidMount() {
     this._firstField.focus();
   }
 
   render() {
     const {fields, onChange} = this.props;
+    const {focusedField} = this.state;
     const controlledProps = (name, maxLength = 500) => {
       return {name, value: fields[name],
+              onFocus: () => this.focusField(name),
               onChange: (e) => onChange(e),
               maxLength: maxLength.toString()};
     };
@@ -109,12 +122,21 @@ export class EditItemFields extends React.Component {
           <Localized id="item-fields-origin">
             <LabelText>oRIGIn</LabelText>
           </Localized>
-          <Localized id="item-fields-origin-input" attrs={{placeholder: true}}>
-            <Input className={styles.input} type="text"
-                   placeholder="wWw.eXAMPLe.cOm"
-                   {...controlledProps("origin")}
-                   ref={(element) => this._firstField = element} />
-          </Localized>
+          <div className={styles.fieldAndTip}>
+            <Localized id="item-fields-origin-input" attrs={{placeholder: true}}>
+              <Input className={styles.input} type="text"
+                     placeholder="wWw.eXAMPLe.cOm"
+                     {...controlledProps("origin")}
+                     ref={(element) => this._firstField = element} />
+            </Localized>
+            {focusedField === "origin" &&
+              <Localized id="item-fields-origin-tip">
+                <div className={styles.tip}>
+                  mAKe sURe tHIs mATCHEs
+                </div>
+              </Localized>
+            }
+          </div>
         </label>
         <label>
           <Localized id="item-fields-username">

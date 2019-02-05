@@ -13,6 +13,22 @@
   display: contents;
 }
 
+.field-and-tip {
+  position: relative;
+}
+.tip {
+  border: 1px solid rgba(12, 12, 13, 0.2);
+  position: absolute;
+  box-sizing: border-box;
+  padding: 10px 12px;
+  top: -5px;
+  left: 270px;
+  width: 270px;
+  height: 84px;
+  box-shadow: 0 5px 12px 0 rgba(0, 0, 0, 0.2);
+  background-color: #fdfdfd;
+}
+
 .input {
   max-width: 242px;
 }
