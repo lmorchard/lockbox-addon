@@ -7,7 +7,10 @@ import UUID from "uuid";
 import { broadcast } from "./message-ports";
 import telemetry from "./telemetry";
 
-export function convertInfo2Item(info) {
+export function normalizeInfo(info) {
+  if (!info) {
+    return null;
+  }
   let title;
   try {
     title = (new URL(info.hostname)).host;
@@ -17,65 +20,13 @@ export function convertInfo2Item(info) {
   title = title.replace(/^http(s)?:\/\//, "").
                 replace(/^www\d*\./, "");
 
-  const id = info.guid;
   const origins = [ info.hostname, info.formSubmitURL ].
       filter((u) => !!u);
 
-  let item = {
-    id,
+  return {
+    ...info,
     title,
-    origins,
-    realm: info.httpRealm,
-    tags: [],
-    entry: {
-      kind: "login",
-      username: info.username,
-      password: info.password,
-      usernameField: info.usernameField,
-      passwordField: info.passwordField,
-    },
   };
-  return item;
-}
-export function convertItem2Info(item) {
-  // dropped on the floor (for now ...)
-  // * title
-  // * tags
-  // * entry.notes
-  // * history
-
-  // item.id ==> info.guid
-  // item.title ==> undefined
-  // item.tags ==> undefined
-  // item.origins[0] ==> info.hostname
-  // item.origins[1] || null ==> info.formSubmitURL
-  // item.entry.kind ==> undefined
-  // item.entry.username ==> info.username
-  // item.entry.password ==> info.password
-  // item.entry.usernameField || "" ==> info.usernameField
-  // item.entry.passwordField || "" ==> info.passwordField
-  // item.entry.notes ==> info.undefined
-  const guid = item.id;
-  const hostname = item.origins[0];
-  const formSubmitURL = item.origins[1] || null;
-  const httpRealm = item.realm || null;
-  const username = item.entry.username;
-  const password = item.entry.password;
-  const usernameField = item.entry.usernameField || "";
-  const passwordField = item.entry.passwordField || "";
-
-  let info = {
-    guid,
-    hostname,
-    formSubmitURL,
-    httpRealm,
-    username,
-    password,
-    usernameField,
-    passwordField,
-  };
-
-  return info;
 }
 
 async function recordMetric(method, itemid, fields) {
@@ -102,24 +53,17 @@ class DataStore {
 
   async list() {
     const logins = await this._allLogins();
-    const items = logins.map(convertInfo2Item);
+    const items = logins.map(normalizeInfo);
 
     return items;
   }
   async get(id) {
-    let one = this._all[id];
-    if (one) {
-      one = convertInfo2Item(one);
-    }
-
-    return one || null;
+    return normalizeInfo(this._all[id]);
   }
-  async add(item) {
-    if (!item) {
+  async add(info) {
+    if (!info) {
       throw new TypeError("invalid item");
     }
-
-    let info = convertItem2Info(item);
     if (!info.hostname) {
       throw new TypeError("missing hostname");
     }
@@ -145,39 +89,37 @@ class DataStore {
     };
     await browser.experiments.logins.add(added);
 
-    added = convertInfo2Item(added);
+    added = normalizeInfo(added);
     recordMetric("added", added.id);
 
     return added;
   }
-  async update(item) {
-    const id = item.id;
-    if (!id) {
+  async update(info) {
+    const guid = info.guid;
+    if (!guid) {
       throw new TypeError("id missing");
     }
-
-    const info = convertItem2Info(item);
-    const orig = await this.get(id);
+    const orig = await this.get(guid);
     if (!orig) {
       throw new Error(`no existing item for ${id}`);
     }
 
-    let updated = {
-      ...info,
-      timePasswordChanged: Date.now(),
-    };
+    let updated = { ...info };
+    if (orig.password !== info.password) {
+      updated.timePasswordChanged = Date.now();
+    }
     await browser.experiments.logins.update(updated);
 
-    updated = convertInfo2Item(updated);
-    recordMetric("updated", item.id);
+    updated = normalizeInfo(updated);
+    recordMetric("updated", info.guid);
 
     return updated;
   }
-  async remove(id) {
-    const item = await this.get(id);
+  async remove(guid) {
+    const item = await this.get(guid);
     if (item) {
-      await browser.experiments.logins.remove(item.id);
-      recordMetric("deleted", item.id);
+      await browser.experiments.logins.remove(item.guid);
+      recordMetric("deleted", item.guid);
     }
     return item || null;
   }
@@ -194,19 +136,19 @@ class DataStore {
 
   addInfo(info) {
     this._all[info.guid] = info;
-    const item = convertInfo2Item(info);
+    const item = normalizeInfo(info);
     broadcast({ type: "added_item", item });
   }
 
   updateInfo(info) {
     this._all[info.guid] = info;
-    const item = convertInfo2Item(info);
+    const item = normalizeInfo(info);
     broadcast({ type: "updated_item", item });
   }
 
   removeInfo({ guid }) {
     delete this._all[guid];
-    broadcast({ type: "removed_item", id: guid });
+    broadcast({ type: "removed_item", guid });
   }
 
   removeAll() {

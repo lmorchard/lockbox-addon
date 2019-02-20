@@ -5,9 +5,9 @@
 export function makeItemSummary(item) {
   return {
     title: item.title,
-    id: item.id,
-    origins: item.origins,
-    username: item.entry.username,
+    guid: item.guid,
+    hostname: item.hostname,
+    username: item.username,
   };
 }
 

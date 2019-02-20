@@ -10,18 +10,16 @@ describe("common", () => {
   describe("makeItemSummary", () => {
     it("makes a summary object", () => {
       let full = {
-        id: "04052872-8347-45E9-9A03-6063093C450A",
+        guid: "04052872-8347-45E9-9A03-6063093C450A",
         title: "example.com",
-        origins: ["https://example.com"],
-        entry: {
-          username: "myusername",
-          password: "ishouldchangeit",
-        },
+        hostname: "https://example.com",
+        username: "myusername",
+        password: "ishouldchangeit",
       };
       expect(makeItemSummary(full)).to.deep.equal({
         title: "example.com",
-        id: "04052872-8347-45E9-9A03-6063093C450A",
-        origins: ["https://example.com"],
+        guid: "04052872-8347-45E9-9A03-6063093C450A",
+        hostname: "https://example.com",
         username: "myusername",
       });
     });

@@ -33,13 +33,13 @@ export default function initializeMessagePorts() {
 
     case "list_items":
       return openDataStore().then(async (ds) => {
-        const entries = (await ds.list()).map(makeItemSummary);
+        const entries = (await ds.list()); //.map(makeItemSummary);
         telemetry.scalarSet("datastoreCount", entries.length);
         return { items: entries };
       });
     case "get_item":
       return openDataStore().then(async (ds) => {
-        return { item: await ds.get(message.id) };
+        return { item: await ds.get(message.guid) };
       });
     case "add_item":
       return openDataStore().then(async (ds) => {
@@ -53,7 +53,7 @@ export default function initializeMessagePorts() {
       });
     case "remove_item":
       return openDataStore().then(async (ds) => {
-        await ds.remove(message.id);
+        await ds.remove(message.guid);
         return {};
       });
 

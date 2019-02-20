@@ -43,13 +43,9 @@ describe("list > reducers", () => {
           actionId: 0,
           item: {
             title: "title",
-            origins: ["origin.com"],
-            entry: {
-              kind: "login",
-              username: "username",
-              password: "password",
-              notes: "notes",
-            },
+            hostname: "https://origin.com",
+            username: "username",
+            password: "password",
           },
         };
 
@@ -68,25 +64,21 @@ describe("list > reducers", () => {
           type: actions.ADD_ITEM_COMPLETED,
           actionId: 0,
           item: {
+            guid: "1",
             title: "title",
-            origins: ["origin.com"],
-            id: "1",
-            entry: {
-              kind: "login",
-              username: "username",
-              password: "password",
-              notes: "notes",
-            },
+            hostname: "https://origin.com",
+            username: "username",
+            password: "password",
           },
           interactive: true,
         };
 
         expect(cacheReducer(state, action)).to.deep.equal({
           items: [{
-            id: action.item.id,
+            guid: action.item.guid,
             title: action.item.title,
-            origins: action.item.origins,
-            username: action.item.entry.username,
+            username: action.item.username,
+            hostname: action.item.hostname,
           }],
           currentItem: action.item,
         });
@@ -101,25 +93,21 @@ describe("list > reducers", () => {
           type: actions.ADD_ITEM_COMPLETED,
           actionId: 0,
           item: {
+            guid: "1",
             title: "title",
-            origins: ["origin.com"],
-            id: "1",
-            entry: {
-              kind: "login",
-              username: "username",
-              password: "password",
-              notes: "notes",
-            },
+            hostname: "https://origin.com",
+            username: "username",
+            password: "password",
           },
           interactive: false,
         };
 
         expect(cacheReducer(state, action)).to.deep.equal({
           items: [{
-            id: action.item.id,
+            guid: action.item.guid,
             title: action.item.title,
-            username: action.item.entry.username,
-            origins: action.item.origins,
+            username: action.item.username,
+            hostname: action.item.hostname,
           }],
           currentItem: null,
         });
@@ -130,44 +118,36 @@ describe("list > reducers", () => {
       it("selected", () => {
         const state = {
           items: [
-            {id: "1", title: "original title"},
-            {id: "2", title: "another title"},
+            {guid: "1", title: "original title"},
+            {guid: "2", title: "another title"},
           ],
           currentItem: {
-            title: "original title",
-            id: "1",
-            origins: ["original-origin.com"],
-            entry: {
-              kind: "login",
-              username: "original username",
-              password: "original password",
-              notes: "original notes",
-            },
+            guid: "1",
+            title: "title",
+            hostname: "https://origin.com",
+            username: "username",
+            password: "password",
           },
         };
         const action = {
           type: actions.UPDATE_ITEM_COMPLETED,
           actionId: 0,
           item: {
-            title: "updated title",
-            id: "1",
-            origins: ["updated-origin.com"],
-            entry: {
-              kind: "login",
-              username: "updated username",
-              password: "updated password",
-              notes: "updated notes",
-            },
+            guid: "1",
+            title: "title",
+            hostname: "https://origin.com",
+            username: "username",
+            password: "password",
           },
         };
 
         expect(cacheReducer(state, action)).to.deep.equal({
           items: [
             {
-              id: action.item.id,
+              guid: action.item.guid,
               title: action.item.title,
-              username: action.item.entry.username,
-              origins: action.item.origins,
+              username: action.item.username,
+              hostname: action.item.hostname,
             },
             state.items[1],
           ],
@@ -178,9 +158,9 @@ describe("list > reducers", () => {
       it("unselected", () => {
         const state = {
           items: [
-            {id: "1", title: "original title", username: "original username",
+            {guid: "1", title: "original title", username: "original username",
              origins: ["original-origin.com"]},
-            {id: "2", title: "another title", username: "another username",
+            {guid: "2", title: "another title", username: "another username",
              origins: ["another-origin.com"]},
           ],
           currentItem: null,
@@ -189,25 +169,21 @@ describe("list > reducers", () => {
           type: actions.UPDATE_ITEM_COMPLETED,
           actionId: 0,
           item: {
-            title: "updated title",
-            id: "1",
-            origins: ["updated-origin.com"],
-            entry: {
-              kind: "login",
-              username: "updated username",
-              password: "updated password",
-              notes: "updated notes",
-            },
+            guid: "1",
+            title: "title",
+            hostname: "https://origin.com",
+            username: "username",
+            password: "password",
           },
         };
 
         expect(cacheReducer(state, action)).to.deep.equal({
           items: [
             {
-              id: action.item.id,
+              guid: action.item.guid,
               title: action.item.title,
-              username: action.item.entry.username,
-              origins: action.item.origins,
+              username: action.item.username,
+              hostname: action.item.hostname,
             },
             state.items[1],
           ],
@@ -219,24 +195,19 @@ describe("list > reducers", () => {
     describe("handle REMOVE_ITEM_COMPLETED", () => {
       it("selected", () => {
         const state = {
-          items: [{id: "1", title: "title", username: "username",
-                   origins: ["origin.com"]}],
+          items: [{guid: "1", title: "title", username: "username",
+                   hostname: "https://origin.com"}],
           currentItem: {
-            title: "title",
-            id: "1",
-            origins: ["origin.com"],
-            entry: {
-              kind: "login",
-              username: "username",
-              password: "password",
-              notes: "notes",
-            },
+            guid: "1",
+            hostname: "https://origin.com",
+            username: "username",
+            password: "password",
           },
         };
         const action = {
           type: actions.REMOVE_ITEM_COMPLETED,
           actionId: 0,
-          id: "1",
+          guid: "1",
         };
 
         expect(cacheReducer(state, action)).to.deep.equal({
@@ -248,27 +219,23 @@ describe("list > reducers", () => {
       it("unselected", () => {
         const state = {
           items: [
-            {id: "1", title: "title", username: "username",
-             origins: ["origin.com"]},
-            {id: "2", title: "other title", username: "another username",
-             origins: ["another-origin.com"]},
+            {guid: "1", title: "title", username: "username",
+              hostname: "https://origin.com"},
+            {guid: "2", title: "other title", username: "another username",
+              hostname: "https://another-origin.com"},
           ],
           currentItem: {
             title: "title",
-            id: "1",
-            origins: ["origin.com"],
-            entry: {
-              kind: "login",
-              username: "username",
-              password: "password",
-              notes: "notes",
-            },
+            guid: "1",
+            hostname: "https://origin.com",
+            username: "username",
+            password: "password",
           },
         };
         const action = {
           type: actions.REMOVE_ITEM_COMPLETED,
-          actionId: 0,
-          id: "2",
+          actionguid: 0,
+          guid: "2",
         };
 
         expect(cacheReducer(state, action)).to.deep.equal({
@@ -350,7 +317,7 @@ describe("list > reducers", () => {
           type: actions.ADD_ITEM_COMPLETED,
           actionId: 0,
           item: {
-            id: "1",
+            guid: "1",
           },
           interactive: true,
         };
@@ -388,7 +355,7 @@ describe("list > reducers", () => {
       const action = {
         type: actions.SELECT_ITEM_STARTING,
         actionId: 0,
-        id: "1",
+        guid: "1",
       };
 
       expect(listReducer(undefined, action)).to.deep.equal({

@@ -11,8 +11,7 @@ import {
   initializeDataStore,
   openDataStore,
   closeDataStore,
-  convertInfo2Item,
-  convertItem2Info,
+  normalizeInfo,
 } from "src/background/datastore";
 
 const LOGINS_METHODS = ["getAll", "add", "update", "remove"];
@@ -36,9 +35,9 @@ const SAMPLE_INFOS = {
     usernameField: "username",
     passwordField: "password",
     timesUsed: 1,
-    timeLastUsed: new Date("2019-01-03T12:00:00Z"),
-    timePasswordChanged: new Date("2019-01-02T12:00:00Z"),
-    timeCreated: new Date("2019-01-01T12:00:00Z"),
+    timeLastUsed: new Date("2019-01-03T12:00:00Z").getTime(),
+    timePasswordChanged: new Date("2019-01-02T12:00:00Z").getTime(),
+    timeCreated: new Date("2019-01-01T12:00:00Z").getTime(),
   },
   BAR: {
     guid: "BAR",
@@ -50,9 +49,9 @@ const SAMPLE_INFOS = {
     usernameField: "username",
     passwordField: "password",
     timesUsed: 0,
-    timeLastUsed: new Date("2019-01-04T12:00:00Z"),
-    timePasswordChanged: new Date("2019-01-03T12:00:00Z"),
-    timeCreated: new Date("2019-01-02T12:00:00Z"),
+    timeLastUsed: new Date("2019-01-04T12:00:00Z").getTime(),
+    timePasswordChanged: new Date("2019-01-03T12:00:00Z").getTime(),
+    timeCreated: new Date("2019-01-02T12:00:00Z").getTime(),
   },
   BAZ: {
     guid: "BAZ",
@@ -64,9 +63,9 @@ const SAMPLE_INFOS = {
     usernameField: "username",
     passwordField: "password",
     timesUsed: 3,
-    timeLastUsed: new Date("2019-01-05T12:00:00Z"),
-    timePasswordChanged: new Date("2019-01-05T11:00:00Z"),
-    timeCreated: new Date("2019-01-05T10:00:00Z"),
+    timeLastUsed: new Date("2019-01-05T12:00:00Z").getTime(),
+    timePasswordChanged: new Date("2019-01-05T11:00:00Z").getTime(),
+    timeCreated: new Date("2019-01-05T10:00:00Z").getTime(),
   },
 };
 
@@ -124,11 +123,10 @@ describe("background > datastore", () => {
   it("fetches initial items from Logins API", async () => {
     expect(browser.experiments.logins.getAll.callCount).to.equal(1);
 
-    // TODO: Issue #21 should do away with item/info conversion
     const expectedItems = Object.values(SAMPLE_INFOS)
-      .map(convertInfo2Item)
-      .sort(cmpAlphaBy("id"));
-    const resultItems = (await store.list()).sort(cmpAlphaBy("id"));
+      .map(normalizeInfo)
+      .sort(cmpAlphaBy("guid"));
+    const resultItems = (await store.list()).sort(cmpAlphaBy("guid"));
 
     expect(resultItems).to.deep.equal(expectedItems);
   });
@@ -137,7 +135,7 @@ describe("background > datastore", () => {
     const beforeItem = await store.get("XYZZY");
     expect(beforeItem).to.equal(null);
 
-    const info = {
+    const info = normalizeInfo({
       guid: "XYZZY",
       title: "XYZZY title",
       hostname: "http://XYZZY.example.com",
@@ -146,30 +144,26 @@ describe("background > datastore", () => {
       password: "XYZZYpass",
       usernameField: "username",
       passwordField: "password",
-    };
+    });
 
     const addedListener = browser.experiments.logins.onAdded.getListener();
     addedListener({ login: info });
 
-    // TODO: Issue #21 should do away with item/info conversion
-    const expectedItem = convertInfo2Item(info);
     const afterItem = await store.get("XYZZY");
-    expect(afterItem).to.deep.equal(expectedItem);
+    expect(afterItem).to.deep.equal(info);
   });
 
   it("handles onUpdated event from Logins API", async () => {
-    const info = {
+    const info = normalizeInfo({
       ...SAMPLE_INFOS.FOO,
       password: "updated FOO password",
-    };
+    });
 
     const updatedListener = browser.experiments.logins.onUpdated.getListener();
     updatedListener({ login: info });
 
-    // TODO: Issue #21 should do away with item/info conversion
-    const expectedItem = convertInfo2Item(info);
     const resultItem = await store.get("FOO");
-    expect(resultItem).to.deep.equal(expectedItem);
+    expect(resultItem).to.deep.equal(info);
   });
 
   it("handles onRemoved event from Logins API", async () => {
@@ -185,173 +179,161 @@ describe("background > datastore", () => {
     expect(resultItem).to.equal(null);
   });
 
+  const info = {
+    guid: "QUUX",
+    title: "QUUX title",
+    hostname: "http://quux.example.com",
+    formSubmitURL: "http://quux.example.com",
+    httpRealm: null,
+    username: "QUUXuser",
+    password: "QUUXpass",
+    usernameField: "username",
+    passwordField: "password",
+  };
+
   it("handles onAllRemoved event from Logins API", async () => {
-    const info = {
-      title: "QUUX title",
-      hostname: "http://quux.example.com",
-      formSubmitURL: "http://quux.example.com",
-      httpRealm: null,
-      username: "QUUXuser",
-      password: "QUUXpass",
-      usernameField: "username",
-      passwordField: "password",
-    };
-    const item = convertInfo2Item(info);
+    const addedItem = await store.add(info);
 
-    // TODO: Issue #21 should do away with item/info conversion
-    const addedItem = await store.add(item);
-
-    const beforeItem = await store.get(addedItem.id);
+    const beforeItem = await store.get(addedItem.guid);
     expect(beforeItem).to.deep.equal(addedItem);
 
     const allRemovedListener =
       browser.experiments.logins.onAllRemoved.getListener();
     allRemovedListener();
 
-    const afterItem = await store.get(addedItem.id);
+    const afterItem = await store.get(addedItem.guid);
     expect(afterItem).to.be.null;
   });
 
   it("allows an item to be fetched", async () => {
-    // TODO: Issue #21 should do away with item/info conversion
-    const expectedItem = convertInfo2Item(SAMPLE_INFOS.FOO);
     const resultItem = await store.get("FOO");
-    expect(resultItem).to.deep.equal(expectedItem);
+    expect(resultItem).to.deep.equal(normalizeInfo(SAMPLE_INFOS.FOO));
   });
 
   it("allows an item to be added", async () => {
-    const info = {
-      title: "QUUX title",
-      hostname: "http://quux.example.com",
-      formSubmitURL: "http://quux.example.com",
-      httpRealm: null,
-      username: "QUUXuser",
-      password: "QUUXpass",
-      usernameField: "username",
-      passwordField: "password",
-    };
-    const item = convertInfo2Item(info);
-
-    // TODO: Issue #21 should do away with item/info conversion
-    const addedItem = await store.add(item);
-    const expectedItem = {
-      ...item,
-      id: addedItem.id,
-    };
+    const addedItem = await store.add(info);
+    const {
+      guid,
+      timesUsed,
+      timeLastUsed,
+      timeCreated,
+      timePasswordChanged
+    } = addedItem;
+    const expectedItem = normalizeInfo({
+      ...info,
+      guid,
+      timesUsed,
+      timeLastUsed,
+      timeCreated,
+      timePasswordChanged,
+    });
     expect(addedItem).to.deep.equal(expectedItem);
 
-    const resultItem = await store.get(addedItem.id);
+    const resultItem = await store.get(addedItem.guid);
     expect(resultItem).to.deep.equal(addedItem);
 
     const apiAdd = browser.experiments.logins.add;
     expect(apiAdd.callCount).to.equal(1);
 
     const expectedApiInfo = {
-      // TODO: Issue #21 should do away with item/info conversion
-      // A double conversion - semi-reflects what happens.
-      ...convertItem2Info(item),
-      guid: addedItem.id,
+      ...info,
+      guid: addedItem.guid,
     };
 
     const {
-      timesUsed,
-      timeLastUsed,
-      timeCreated,
-      timePasswordChanged,
+      timesUsed: resultTimesUsed,
+      timeLastUsed: resultTimeLastUsed,
+      timeCreated: resultTimeCreated,
+      timePasswordChanged: resultTimePasswordChanged,
       ...resultApiInfo
     } = apiAdd.lastCall.lastArg;
 
-    expect(timesUsed).to.equal(0);
-    expect(timeLastUsed).to.not.be.undefined;
-    expect(timeCreated).to.not.be.undefined;
-    expect(timePasswordChanged).to.not.be.undefined;
+    expect(resultTimesUsed).to.equal(0);
+    expect(resultTimeLastUsed).to.not.be.undefined;
+    expect(resultTimeCreated).to.not.be.undefined;
+    expect(resultTimePasswordChanged).to.not.be.undefined;
     expect(resultApiInfo).to.deep.equal(expectedApiInfo);
   });
 
   it("allows an item to be updated", async () => {
-    const id = "BAR";
+    const guid = "BAR";
 
-    const originalItem = await store.get(id);
+    const originalItem = await store.get(guid);
+    
+    const updatedItem = await store.update({
+      ...originalItem,
+      password: "updated password",
+    });
+
     const expectedItem = {
       ...originalItem,
-      entry: {
-        ...originalItem.entry,
-        password: "updated password",
-      },
+      password: "updated password",
+      timePasswordChanged: updatedItem.timePasswordChanged,
     };
-
-    const updatedItem = await store.update(expectedItem);
     expect(updatedItem).to.deep.equal(expectedItem);
 
-    const fetchedItem = await store.get(id);
+    const fetchedItem = await store.get(guid);
     expect(fetchedItem).to.deep.equal(expectedItem);
 
     const apiUpdate = browser.experiments.logins.update;
     expect(apiUpdate.callCount).to.equal(1);
 
     const expectedApiInfo = {
-      // TODO: Issue #21 should do away with item/info conversion
-      // A double conversion - semi-reflects what happens.
-      ...convertItem2Info(expectedItem),
-      guid: expectedItem.id,
+      ...expectedItem,
+      guid: expectedItem.guid,
     };
 
-    const {
-      timePasswordChanged,
-      ...resultApiInfo
-    } = apiUpdate.lastCall.lastArg;
-
-    expect(timePasswordChanged).to.not.be.undefined;
-    expect(resultApiInfo).to.deep.equal(expectedApiInfo);
+    expect(apiUpdate.lastCall.lastArg)
+      .to.deep.equal(expectedApiInfo);
   });
 
   it("allows an item to be removed", async () => {
-    const id = "BAZ";
+    const guid = "BAZ";
 
-    const beforeItem = await store.get(id);
+    const beforeItem = await store.get(guid);
     expect(beforeItem).to.not.equal(null);
 
-    const removedItem = await store.remove(id);
+    const removedItem = await store.remove(guid);
     expect(removedItem).to.deep.equal(beforeItem);
 
-    const afterItem = await store.get(id);
+    const afterItem = await store.get(guid);
     expect(afterItem).to.equal(null);
 
     const apiRemove = browser.experiments.logins.remove;
     expect(apiRemove.callCount).to.equal(1);
-    expect(apiRemove.lastCall.lastArg).to.equal(id);
+    expect(apiRemove.lastCall.lastArg).to.equal(guid);
   });
 
   describe("hostname to title conversion", () => {
     let info = Object.assign({}, SAMPLE_INFOS.FOO);
     it("removes the initial 'https://' part of a hostname", () => {
       info.hostname = "https://example.com";
-      const item = convertInfo2Item(info);
+      const item = normalizeInfo(info);
       expect(item.title).to.equal("example.com");
     });
     it("removes the initial 'http://' part of a hostname", () => {
       info.hostname = "http://example.com";
-      const item = convertInfo2Item(info);
+      const item = normalizeInfo(info);
       expect(item.title).to.equal("example.com");
     });
     it("removes the 'www' subdomain", () => {
       info.hostname = "http://www.example.com";
-      const item = convertInfo2Item(info);
+      const item = normalizeInfo(info);
       expect(item.title).to.equal("example.com");
     });
     it("removes the 'www1' subdomain", () => {
       info.hostname = "http://www1.example.com";
-      const item = convertInfo2Item(info);
+      const item = normalizeInfo(info);
       expect(item.title).to.equal("example.com");
     });
     it("does not remove the 'foo' subdomain", () => {
       info.hostname = "http://foo.example.com";
-      const item = convertInfo2Item(info);
+      const item = normalizeInfo(info);
       expect(item.title).to.equal("foo.example.com");
     });
     it("does not remove the '.com' public suffix", () => {
       info.hostname = "https://www.example.com";
-      const item = convertInfo2Item(info);
+      const item = normalizeInfo(info);
       expect(item.title.endsWith(".com")).to.be.true;
     });
   });

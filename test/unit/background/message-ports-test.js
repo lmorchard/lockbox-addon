@@ -66,21 +66,17 @@ describe("background > message ports", () => {
 
   it('handle "add_item"', async () => {
     const item = {
-      title: "origin.com",
-      origins: ["origin.com", "origin.com"],
-      entry: {
-        kind: "login",
-        username: "username",
-        password: "password",
-        usernameField: "",
-        passwordField: "",
-      },
+      hostname: "https://origin.com",
+      username: "username",
+      password: "password",
+      usernameField: "",
+      passwordField: "",
     };
     const result = await browser.runtime.sendMessage({
       type: "add_item",
       item,
     });
-    itemId = result.item.id;
+    itemId = result.item.guid;
 
     expect(result.item).to.deep.include(item);
     expect(otherListener).to.have.callCount(1);
@@ -90,16 +86,12 @@ describe("background > message ports", () => {
 
   it('handle "update_item"', async () => {
     const item = {
-      title: "updated-origin.com",
-      id: itemId,
-      origins: ["updated-origin.com", "updated-origin.com"],
-      entry: {
-        kind: "login",
-        username: "updated username",
-        password: "updated password",
-        usernameField: "",
-        passwordField: "",
-      },
+      guid: itemId,
+      hostname: "https://updated-origin.com",
+      username: "updated username",
+      password: "updated password",
+      usernameField: "",
+      passwordField: "",
     };
     const result = await browser.runtime.sendMessage({
       type: "update_item",
@@ -115,19 +107,15 @@ describe("background > message ports", () => {
   it('handle "get_item"', async () => {
     const result = await browser.runtime.sendMessage({
       type: "get_item",
-      id: itemId,
+      guid: itemId,
     });
 
     expect(result.item).to.deep.include({
-      title: "updated-origin.com",
-      origins: ["updated-origin.com", "updated-origin.com"],
-      entry: {
-        kind: "login",
-        username: "updated username",
-        password: "updated password",
-        usernameField: "",
-        passwordField: "",
-      },
+      hostname: "https://updated-origin.com",
+      username: "updated username",
+      password: "updated password",
+      usernameField: "",
+      passwordField: "",
     });
   });
 
@@ -136,25 +124,26 @@ describe("background > message ports", () => {
       type: "list_items",
     });
 
-    expect(result).to.deep.equal({items: [{
-      id: itemId,
-      title: "updated-origin.com",
+    expect(result.items).to.have.lengthOf(1);
+    expect(result.items[0]).to.deep.include({
+      guid: itemId,
+      hostname: "https://updated-origin.com",
       username: "updated username",
-      origins: ["updated-origin.com", "updated-origin.com"],
-    }]});
+      password: "updated password",
+    });
   });
 
   it('handle "remove_item"', async () => {
     const result = await browser.runtime.sendMessage({
       type: "remove_item",
-      id: itemId,
+      guid: itemId,
     });
 
     expect(result).to.deep.equal({});
     expect(otherListener).to.have.callCount(1);
     expect(otherListener).to.be.calledWith({
       type: "removed_item",
-      id: itemId,
+      guid: itemId,
     });
   });
 
@@ -202,13 +191,11 @@ describe("background > message ports", () => {
 
     // Make sure no message is broadcast now that we've disconnected.
     const item = {
-      title: "title",
-      origins: ["origin.org", "origin.org"],
-      entry: {
-        kind: "login",
-        username: "username",
-        password: "password",
-      },
+      hostname: "https://origin.com",
+      username: "username",
+      password: "password",
+      usernameField: "",
+      passwordField: "",
     };
     await browser.runtime.sendMessage({
       type: "add_item",

@@ -14,14 +14,14 @@ function maybeAddCurrentItem(state, action) {
 }
 
 function maybeUpdateCurrentItem(state, action) {
-  if (state.currentItem && state.currentItem.id === action.item.id) {
+  if (state.currentItem && state.currentItem.guid === action.item.guid) {
     return {currentItem: action.item};
   }
   return {};
 }
 
 function maybeRemoveCurrentItem(state, action) {
-  if (state.currentItem && state.currentItem.id === action.id) {
+  if (state.currentItem && state.currentItem.guid === action.guid) {
     return {currentItem: null};
   }
   return {};
@@ -41,7 +41,7 @@ export function cacheReducer(state = {items: [], currentItem: null}, action) {
         // HACK: add dispatched via Logins API events may be a duplicate
         // of an add we just completed in this UI - this filter makes it
         // idempotent
-        ...state.items.filter(x => x.id != action.item.id),
+        ...state.items.filter(x => x.guid != action.item.guid),
         makeItemSummary(action.item),
       ],
       ...maybeAddCurrentItem(state, action),
@@ -50,7 +50,7 @@ export function cacheReducer(state = {items: [], currentItem: null}, action) {
     return {
       ...state,
       items: state.items.map((x) => {
-        if (x.id === action.item.id) {
+        if (x.guid === action.item.guid) {
           return makeItemSummary(action.item);
         }
         return x;
@@ -60,7 +60,7 @@ export function cacheReducer(state = {items: [], currentItem: null}, action) {
   case actions.REMOVE_ITEM_COMPLETED:
     return {
       ...state,
-      items: state.items.filter((x) => x.id !== action.id),
+      items: state.items.filter((x) => x.guid !== action.guid),
       ...maybeRemoveCurrentItem(state, action),
     };
   case actions.REMOVED_ALL_ITEMS:
@@ -80,11 +80,11 @@ export function listReducer(state = {
   switch (action.type) {
   case actions.ADD_ITEM_COMPLETED:
     if (action.interactive) {
-      return {...state, selectedItemId: action.item.id};
+      return {...state, selectedItemId: action.item.guid};
     }
     return state;
   case actions.SELECT_ITEM_STARTING:
-    return {...state, selectedItemId: action.id};
+    return {...state, selectedItemId: action.guid};
   case actions.START_NEW_ITEM:
     return {...state, selectedItemId: NEW_ITEM_ID};
   case actions.CANCEL_EDITING:
